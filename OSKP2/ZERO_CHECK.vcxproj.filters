@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="16.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="D:\dev\OSKP2\OSKP2\CMakeFiles\daae471d5a6669f4eed2c01acdcdd40e\generate.stamp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{8B0ECBFE-645E-3D68-8FC8-2B59A74E044C}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
