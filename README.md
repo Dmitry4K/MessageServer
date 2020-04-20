@@ -3,17 +3,15 @@
 ## 1.	Задание
 Реализовать сервер сообщений, который поддерживает несколько очередей сообщений, а также библиотеку для работы с сервером вида: 
 
-a. var connection = Connect(string serverAddress); // var connection = Connect(«127.0.0.1:8312»);
-
-b. SendMessage(connection, queue, message)
-
-c. RecieveMessage(connection, queue)
+	a. var connection = Connect(string serverAddress); // var connection = Connect(«127.0.0.1:8312»);
+	b. SendMessage(connection, queue, message)
+	c. RecieveMessage(connection, queue)
 
 Сам сервер должен поддерживать cli, то есть запуск должен осуществляться следующим образом:
 
-a. server.out 8312 (поднимает сервер сообщений на порту 8312)
-b. Сервер должен работать на нативных сокетах
-c. Должна быть возможность отправлять сообщения большого размера (например, 1ГБ)
+	a. server.out 8312 (поднимает сервер сообщений на порту 8312)
+	b. Сервер должен работать на нативных сокетах
+	c. Должна быть возможность отправлять сообщения большого размера (например, 1ГБ)
 
 
 2.	Объяснение работы сервера сообщений
