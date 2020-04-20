@@ -274,6 +274,17 @@ void ExecuteFunction(ServerClass* Server, int sock, char* msg, int& res) {
 			}
 			else {
 				//такой очереди нет
+				rapidjson::Document doc;
+				rapidjson::Value json_val;
+				json_val.SetString("", doc.GetAllocator());
+				doc.SetObject().AddMember("data", json_val, doc.GetAllocator());
+				json_val.SetInt(MessageClass::STRING);
+				doc.AddMember("type", json_val, doc.GetAllocator());
+				rapidjson::StringBuffer buffer;
+				rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+				doc.Accept(writer);
+				std::string res = buffer.GetString();
+				while (Server->Send(sock, res.c_str()) == SOCKET_ERROR) {}
 			}
 		}
 		Server->ActiveSockets.Add(sock);
