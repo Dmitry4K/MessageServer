@@ -15,22 +15,23 @@ class ClientClass {
 private:
 	int SocketHandle = 0;
 	int ServerSocket = 0;
+	int Send(const char* b);
+	int Send(const char* b, int bytes);
+	char* Recieve();
+	char* Recieve(int b);
 public:
 	const static int CLIENT_CLASS_ERROR_SOCKET = SOCKET_ERROR;
 	const static int CLIENT_CLASS_BUFFER_SIZE = 100;
 	const static int FILE_TYPE = 0;
 	const static int STRING_TYPE = 1;
 	const static int FILE_BUFFER_SIZE = 10000;
+	const static int WAITING_TIME = 200;
 	ClientClass();
 	ClientClass(const char* str);
 	~ClientClass();
 	int GetSocket();
 	int Connect(const char* str);
 	int Disconnect();
-	int Send(const char* b);
-	int Send(const char* b, int bytes);
-	char* Recieve();
-	char* Recieve(int b);
 	std::string RecievePost(std::string id);
 	void SendPost(std::string id, std::string msg);
 };

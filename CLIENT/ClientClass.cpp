@@ -101,7 +101,7 @@ void ClientClass::SendPost(std::string id, std::string msg) {
 		rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
 		doc.Accept(writer);
 		Send(buffer.GetString());
-		Sleep(100);
+		Sleep(WAITING_TIME);
 		Recieve(strlen("Start") + 1);
 		DWORD readbytes;
 		char file_buffer[FILE_BUFFER_SIZE];
@@ -112,7 +112,7 @@ void ClientClass::SendPost(std::string id, std::string msg) {
 			--pcount;
 		}
 		CloseHandle(F);
-		Sleep(100);
+		Sleep(WAITING_TIME);
 	}
 	else {
 		json_val.SetInt(STRING_TYPE);
@@ -121,7 +121,7 @@ void ClientClass::SendPost(std::string id, std::string msg) {
 		rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
 		doc.Accept(writer);
 		Send(buffer.GetString());
-		Sleep(100);
+		Sleep(WAITING_TIME);
 		Recieve(strlen("Start") + 1);
 	}
 	
@@ -147,7 +147,7 @@ std::string ClientClass::RecievePost(std::string id) {
 	rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
 	doc.Accept(writer);
 	Send(buffer.GetString());
-	Sleep(100);
+	Sleep(WAITING_TIME);
 	Recieve(strlen("Start")+1);
 	std::string ans(Recieve());
 	rapidjson::StringStream s(ans.c_str());
@@ -155,7 +155,7 @@ std::string ClientClass::RecievePost(std::string id) {
 	int type = doc["type"].GetInt();
 	if (type == STRING_TYPE) {
 		std::string msg = doc["data"].GetString();
-		Sleep(100);
+		Sleep(WAITING_TIME);
 		return msg;
 	}
 	else if (type == FILE_TYPE) {
@@ -172,7 +172,7 @@ std::string ClientClass::RecievePost(std::string id) {
 			--pack_count;
 		}
 		CloseHandle(f);
-		Sleep(100);
+		Sleep(WAITING_TIME);
 		return msg;
 		//получаем файл
 	}
