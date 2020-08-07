@@ -5,37 +5,49 @@
 #include<queue>
 #include<map>
 #include<string>
-#include<rapidjson/writer.h>
-#include<rapidjson/document.h>
-#include<rapidjson/filewritestream.h>
-#include<rapidjson/filereadstream.h>
+#include<list>
 
-struct MessageClass {
-	const static int FILE = 0;
-	const static int STRING = 1;
+const int FILE_TYPE = 0;
+const int STRING_TYPE = 1;
+const int INGURED_TYPE = 2;
+const int UNKNOWN_TYPE = -1;
+const std::string WAY_TO_DATA = "D:\\dev\\OSKP2\\data.txt";
+const std::string FOLDER = "D:\\dev\\OSKP2\\server_storage\\";
+
+class MessageClass {
 	std::string Data;
 	int Type;
-	MessageClass() {}
-	MessageClass(std::string);
-	MessageClass(std::string, int t);
+public:
+	MessageClass();
+	MessageClass(const std::string&, int t);
+
+	bool Empty();
+	int GetType();
+	std::string GetData();
+	void Write(std::ofstream& file);
+	void Read(std::ifstream& file);
 };
 
 class DataBaseClass {
 private:
 	std::string File;
 	std::map<std::string, std::queue<MessageClass>> Data;
+	std::list<MessageClass*> Files;
+	void ReadQueue(std::ifstream& file);
+	void WriteQueue(std::ofstream& file, const std::string& qid, std::queue<MessageClass>& q);
 public:
 	DataBaseClass();
-	DataBaseClass(const char*);
 	~DataBaseClass();
+	DataBaseClass(const DataBaseClass&) = delete;
+
 	std::queue<MessageClass>& GetQueueByName(const std::string&);
-	void AddMessageInQueue(const std::string&, MessageClass);
-	MessageClass GetFrontMessageInQueue(const std::string&);
-	void PopMessageInQueue(const std::string&);
-	bool isExistQueue(const std::string&);
-	bool Upload(const char*);
-	void Write(const char*);
-	void NewBase(const char*);
-	void AddQueue(const char*);
-	bool RemoveQueue(const char*);
+	void AddQueue(const std::string&);
+	std::map<std::string, std::queue<MessageClass>>::iterator isExistQueue(const std::string&);
+	std::map<std::string, std::queue<MessageClass>>::iterator End();
+	bool RemoveQueue(const std::string&);
+	MessageClass* FindFile(const std::string&);
+
+	void Upload(const std::string&);
+	void Write(const std::string&);
+	void NewBase(const std::string&);
 };

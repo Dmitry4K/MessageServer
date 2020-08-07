@@ -6,32 +6,62 @@
 #include<Windows.h>
 #include<string>
 #include<utility>
-#include<rapidjson/writer.h>
-#include<rapidjson/document.h>
-#include<rapidjson/filewritestream.h>
-#include<rapidjson/filereadstream.h>
-#include<rapidjson/stringbuffer.h>
+#include<map>
+#include"../Additional/SimpleTimer.h"
+#include"../MySockets/MySockets.h"
+#include"../Additional/MyProtClasses.h"
+#include"MyClientParser.h"
+struct MyCommand;
+const int ATTEMPT_COUNT = 4;
+const int ATTEMPT_TIME = 1000;
+const int ACTIVE_SOCKETS_COUNT = 10;
+const int DEFAULT_SLEEP_TIME = 500;
+const int OFF = 0;
+const int ON = 1;
+const int FILE_TYPE = 0;
+const int STRING_TYPE = 1;
+const std::string DEFAULT_FOLDER = "D:\\dev\\OSKP2\\client_storage\\";
+
+const int PACK_SIZE = 10000;
+struct MyCommandClass;
 class ClientClass {
 private:
-	int SocketHandle = 0;
-	int ServerSocket = 0;
-	int Send(const char* b);
-	int Send(const char* b, int bytes);
-	char* Recieve();
-	char* Recieve(int b);
+	MySocketClass HostSocket;
+	Timer MyTimer;
+	std::map<std::string, MyCommandClass*> CommandMap;
+
+	std::thread ReceiveThread;
+	int ReceiveThreadState = OFF;
+	MyParserClass Parser;
+	std::queue<MyCommandClass*> Commands;
+	int Send(const std::string& text);//CHAR*
+
+	std::string Folder = DEFAULT_FOLDER;
+	inline void GetPacks();
 public:
-	const static int CLIENT_CLASS_ERROR_SOCKET = SOCKET_ERROR;
-	const static int CLIENT_CLASS_BUFFER_SIZE = 100;
-	const static int FILE_TYPE = 0;
-	const static int STRING_TYPE = 1;
-	const static int FILE_BUFFER_SIZE = 10000;
-	const static int WAITING_TIME = 200;
-	ClientClass();
-	ClientClass(const char* str);
+	ClientClass(const std::string& adr);
 	~ClientClass();
-	int GetSocket();
-	int Connect(const char* str);
+
+	void Start();
+	int Connect(const std::string& adr);
 	int Disconnect();
-	std::string RecievePost(std::string id);
-	void SendPost(std::string id, std::string msg);
+
+	const MySocketClass& GetSocket() const ;
+
+	int SendText(const std::string& qid, const std::string& text);
+	int SendFile(const std::string& qid, const std::string& file);
+	int Receive(const std::string& qid, std::string& dest);
+	const std::string& GetFolder() const;
+	void SetFolder(const std::string& f);
+
+	friend void ReceiveFunction(ClientClass* Server);
+};
+void ReceiveFunction(ClientClass* Server);
+
+struct MyCommandClass {
+	int count = 0;
+	std::vector<std::string> params;
+	virtual void execute(ClientClass *node) const = 0;
+	virtual void argument_parsing(std::istringstream& stream) = 0;
+	virtual void copy(MyCommandClass*&) const = 0;
 };

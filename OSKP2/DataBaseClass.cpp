@@ -1,162 +1,165 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include"DataBaseClass.h"
 
+MessageClass::MessageClass() :
+	Data(),
+	Type(UNKNOWN_TYPE)
+{
 
-DataBaseClass::DataBaseClass(const char* file) {
-	if (!Upload(file)) {
-		std::cout << "Creating New DataBase\n";
-		NewBase(file);
-		Upload(file);
-	}
 }
 
+MessageClass::MessageClass(const std::string& d, int t):
+	Data(d),
+	Type(t)
+{
+}
+
+int MessageClass::GetType() {
+	return Type;
+}
+std::string MessageClass::GetData() {
+	return Data;
+}
+
+bool MessageClass::Empty() {
+	return Data.empty();
+}
+
+
+void MessageClass::Read(std::ifstream& file) {
+	std::string word;
+	file >> word;		//get "msg"
+	file >> word;		//get "type"
+	int type;
+	file >> type;		//get type
+	file >> word;		//get "len"
+	int len;
+	file >> len;		//get len
+	file >> word;		//get "text"
+	file.get();
+	std::string text;
+	for (int i = 0; i < len; ++i) {
+		text += (char)file.get();
+	}
+	this->Type = type;
+	this->Data = text;
+}
+
+void MessageClass::Write(std::ofstream& file) {
+	file << "msg type " << Type << " len " << Data.length() << " text " << Data;
+}
 
 DataBaseClass::DataBaseClass() {
-
+	Upload(WAY_TO_DATA);
 }
+
+
+DataBaseClass::~DataBaseClass() {
+	Write(WAY_TO_DATA);
+}
+
 std::queue<MessageClass>& DataBaseClass::GetQueueByName(const std::string& id) {
 	return Data.find(id)->second;
 }
-void DataBaseClass::AddMessageInQueue(const std::string& id, MessageClass msg) {
-	if (isExistQueue(id)) {
-		GetQueueByName(id).push(msg);
-	}
-	else {
-		AddQueue(id.c_str());
-		GetQueueByName(id).push(msg);
-	}
-}
-MessageClass DataBaseClass::GetFrontMessageInQueue(const std::string& id) {
-	if (isExistQueue(id)) {
-		return GetQueueByName(id).front();
-	}
-	return MessageClass();
-}
-void DataBaseClass::PopMessageInQueue(const std::string& id) {
-	if (isExistQueue(id)) {
-		GetQueueByName(id).pop();
-	}
-}
 
-bool DataBaseClass::isExistQueue(const std::string& id) {
-	if (Data.find(id) == Data.end()) {
-		return false;
-	}
-	else {
-		return true;
-	}
+std::map<std::string, std::queue<MessageClass>>::iterator  DataBaseClass::isExistQueue(const std::string& id) {
+	return Data.find(id);
 }
-
-void DataBaseClass::NewBase(const char* str) {
-	FILE* file = fopen(str, "wb");
-	rapidjson::Document doc;
-	auto& allocator = doc.GetAllocator();
-
-	rapidjson::Document Vector;
-	Vector.SetArray();
-	doc.SetObject().AddMember("size", 0, allocator).AddMember("data", Vector, allocator);
-
-	char writeBuffer[10000];
-	rapidjson::FileWriteStream os(file, writeBuffer, sizeof(writeBuffer));
-	rapidjson::Writer<rapidjson::FileWriteStream> writer(os);
-	doc.Accept(writer);
-	fclose(file);
-}
-
-void DataBaseClass::AddQueue(const char* str) {
+void DataBaseClass::AddQueue(const std::string& str) {
 	Data.insert({ str, std::queue<MessageClass>() });
 }
-bool DataBaseClass::RemoveQueue(const char* str) {
-	auto iter = Data.find(str);
-	if (iter == Data.end()) {
+
+bool DataBaseClass::RemoveQueue(const std::string& qid) {
+	auto q = isExistQueue(qid);
+	if (q == Data.end()) {
 		return false;
 	}
 	else {
-		Data.erase(str);
+		Data.erase(q);
 		return true;
 	}
 }
 
-bool DataBaseClass::Upload(const char* file) {
-	FILE* f = fopen(file, "rb");
-	if (!f) {
-		std::cout << "Data is not opened!\n";
-		//fclose(f);
-		return false;
-	}
-	File = std::string(file);
-	char readBuffer[10000];
-	rapidjson::FileReadStream is(f, readBuffer, sizeof(readBuffer));
-	rapidjson::Document d;
-	d.ParseStream(is);
 
-	int size = d["size"].GetInt();
-	auto Array = d["data"].GetArray();
-	for (int i = 0; i < size; ++i) {
-		auto Queue = Array[i].GetObject();
-		std::string qName = Queue["name"].GetString();
-		int qSize = Queue["size"].GetInt();
-		auto qData = Queue["data"].GetArray();
-		std::queue<MessageClass> q;
-		for (int j = 0; j < qSize; ++j) {
-			auto Msg = qData[j].GetObject();
-			std::string data = Msg["data"].GetString();
-			int type = Msg["type"].GetInt();
-			q.push(MessageClass(data, type));
-		}
-		Data.insert({ qName, q });
+void DataBaseClass::Upload(const std::string& way) {
+	std::ifstream file(way);
+	file.seekg(0, std::ios_base::end);
+	unsigned int size = file.tellg();
+	file.close();
+	if (size == 0) {
+		NewBase(way);
+		Upload(way);
 	}
-	std::cout << "Upload complete : uploaded " << Data.size() << " queues\n";
-	fclose(f);
-	return true;
+	else {
+		std::ifstream file(way);
+		std::string word;
+		file >> word;		//get "data"
+		file >> word;		//get "queues"
+		int q_count;
+		file >> q_count;	//get queues count
+		for (int i = 0; i < q_count; ++i) {
+			ReadQueue(file);
+		}
+	}
+	file.close();
 }
 
-void DataBaseClass::Write(const char* str) {
-	FILE* file = fopen(str, "wb");
-	rapidjson::Document doc;
-	auto& allocator = doc.GetAllocator();
-
-	rapidjson::Value json_val;
-	json_val.SetInt(Data.size());
-	doc.SetObject().AddMember("size", json_val, allocator);
-	rapidjson::Document jsonData;
-	jsonData.SetArray();
-	for (auto iter = Data.begin(); iter != Data.end(); ++iter) {
-		rapidjson::Document jsonQueue;
-		json_val.SetString(iter->first.c_str(), allocator);
-		jsonQueue.SetObject().AddMember("name", json_val, allocator);
-		json_val.SetInt(iter->second.size());
-		jsonQueue.AddMember("size", json_val, allocator);
-		rapidjson::Document jsonDataQueue;
-		jsonDataQueue.SetArray();
-		int size = iter->second.size();
-		for (int i = 0; i < size; ++i) {
-			rapidjson::Document jsonMessage;
-			json_val.SetString(iter->second.front().Data.c_str(), allocator);
-			jsonMessage.SetObject().AddMember("data", json_val, allocator);
-			json_val.SetInt(iter->second.front().Type);
-			jsonMessage.AddMember("type", json_val, allocator);
-			iter->second.pop();
-			jsonDataQueue.PushBack(jsonMessage, allocator);
-		}
-		jsonQueue.AddMember("data", jsonDataQueue, allocator);
-		jsonData.PushBack(jsonQueue, allocator);
-	}
-
-
-	doc.AddMember("data", jsonData, allocator);
-
-	char writeBuffer[10000];
-	rapidjson::FileWriteStream os(file, writeBuffer, sizeof(writeBuffer));
-	rapidjson::Writer<rapidjson::FileWriteStream> writer(os);
-	doc.Accept(writer);
-	fclose(file);
+void DataBaseClass::NewBase(const std::string& way) {
+	std::ofstream file(way);
+	file << "data" << std::endl;
+	file << "queues " << 0 << std::endl;
+	file.close();
 }
 
-MessageClass::MessageClass(std::string m, int t) : Data(m), Type(t) {}
-MessageClass::MessageClass(std::string m) : Data(m), Type(STRING) {};
+void DataBaseClass::ReadQueue(std::ifstream& file) {
+	std::string qid;
+	std::string word;
+	file >> word;		//get "id"
+	file >> qid;		//get id
+	file >> word;		//get "count"
+	unsigned int count;
+	file >> count;		//get count
+	std::queue<MessageClass> res;
+	for (int i = 0; i < count; ++i) {
+		MessageClass msg;
+		msg.Read(file);
+		res.push(msg);
+	}
+	Data.insert(std::make_pair(qid, res));
+}
 
-DataBaseClass::~DataBaseClass() {
-	if (!File.empty())
-		Write(File.c_str());
+
+void  DataBaseClass::Write(const std::string& way) {
+	std::ofstream file(way);
+	file.seekp(0, std::ios_base::end);
+	unsigned int size = file.tellp();
+	if (size != 0) {
+		file.close();
+		std::remove(way.c_str());
+		file.open(way);
+	}
+	file << "data" << std::endl;
+	file << "queues " << Data.size() << std::endl;
+	for (auto it = Data.begin(); it != Data.end(); ++it) {
+		file << "\t";
+		WriteQueue(file, it->first, it->second);
+		file << std::endl;
+	}
+	file.close();
+}
+
+
+void DataBaseClass::WriteQueue(std::ofstream& file,const std::string& qid, std::queue<MessageClass>& q) {
+	file << "id " << qid << " count " << q.size() << std::endl;
+	while (!q.empty()) {
+		file << "\t";
+		q.front().Write(file);
+		q.pop();
+		file << std::endl;
+	}
+}
+
+
+std::map<std::string, std::queue<MessageClass>>::iterator DataBaseClass::End() {
+	return Data.end();
 }

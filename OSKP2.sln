@@ -7,8 +7,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SERVER", "OSKP2\OSKP2.vcxpr
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CLIENT", "CLIENT\CLIENT.vcxproj", "{497CA875-865F-49CB-B570-A08568A5A345}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Console", "Console\Console.vcxproj", "{21E2D71E-2F63-42BF-82C0-3892A8A6AB90}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -33,14 +31,6 @@ Global
 		{497CA875-865F-49CB-B570-A08568A5A345}.Release|x64.Build.0 = Release|x64
 		{497CA875-865F-49CB-B570-A08568A5A345}.Release|x86.ActiveCfg = Release|Win32
 		{497CA875-865F-49CB-B570-A08568A5A345}.Release|x86.Build.0 = Release|Win32
-		{21E2D71E-2F63-42BF-82C0-3892A8A6AB90}.Debug|x64.ActiveCfg = Debug|x64
-		{21E2D71E-2F63-42BF-82C0-3892A8A6AB90}.Debug|x64.Build.0 = Debug|x64
-		{21E2D71E-2F63-42BF-82C0-3892A8A6AB90}.Debug|x86.ActiveCfg = Debug|Win32
-		{21E2D71E-2F63-42BF-82C0-3892A8A6AB90}.Debug|x86.Build.0 = Debug|Win32
-		{21E2D71E-2F63-42BF-82C0-3892A8A6AB90}.Release|x64.ActiveCfg = Release|x64
-		{21E2D71E-2F63-42BF-82C0-3892A8A6AB90}.Release|x64.Build.0 = Release|x64
-		{21E2D71E-2F63-42BF-82C0-3892A8A6AB90}.Release|x86.ActiveCfg = Release|Win32
-		{21E2D71E-2F63-42BF-82C0-3892A8A6AB90}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

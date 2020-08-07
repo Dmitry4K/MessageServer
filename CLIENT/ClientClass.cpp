@@ -2,178 +2,173 @@
 #include<iostream>
 #include<sys/stat.h>
 #include"ClientClass.h"
+#include"../MyFunctions/MyFunctions.h"
+#include"Commands/text_c.h"
+#include"Commands/endfile_c.h"
+#include"Commands/pack_c.h"
+#include<fstream>
 
-ClientClass::ClientClass() {
-	WSAData wData;
-	if (WSAStartup(MAKEWORD(2, 2), &wData) == 0) {
-		std::cout << "WSA Startup succes\n";
-	}
-	else {
-		"WSA Startup Error!\n";
+ClientClass::ClientClass(const std::string& adr) : Parser(this->CommandMap){
+	CommandMap["text"] = new ClientTextCommand();
+	CommandMap["pack"] = new ClientPackCommand();
+	CommandMap["endfile"] = new ClientEndFileCommand();
+	if (HostSocket.Connect(adr) != 0) {
+		HostSocket.Close();
 		exit(1);
 	}
-	SocketHandle = -1;
-}
-
-std::pair<std::string, std::string> GetPortAndIp(std::string& a) {
-	std::string ip;
-	std::string port;
-	for (size_t i = 0; i < a.length(); ++i) {
-		if (a[i] == ':') {
-			ip = a.substr(0, i);
-			port = a.substr(i + 1, a.npos);
-			return std::make_pair(ip, port);
-		}
-	}
-	throw std::exception("Invalid addres");
-}
-
-int ClientClass::Connect(const char* str) {
-	std::string AdrString(str);
-	SocketHandle = socket(AF_INET, SOCK_STREAM, NULL);
-	if (SocketHandle == SOCKET_ERROR) {
-		return SOCKET_ERROR;
-	}
-	SOCKADDR_IN addr;
-	auto IpAndPort = GetPortAndIp(AdrString);
-	//std::cout << IpAndPort.first << ' ' << IpAndPort.second << std::endl;
-	addr.sin_family = AF_INET;
-	addr.sin_addr.S_un.S_addr = inet_addr(IpAndPort.first.c_str());
-	addr.sin_port = htons(std::stoi(IpAndPort.second));
-	return connect(SocketHandle, (sockaddr*)&addr, sizeof(addr));;
-}
-
-int ClientClass::Send(const char* msg) {
-	return send(SocketHandle, msg, strlen(msg)+1, 0);
-}
-
-int ClientClass::Send(const char* b, int bytes) {
-	return send(SocketHandle, b, bytes, 0);
-}
-char* ClientClass::Recieve() {
-	if (SocketHandle == 0) {
-		return nullptr;
-	}
-	char* msg = new char[CLIENT_CLASS_BUFFER_SIZE];
-	recv(SocketHandle, msg, CLIENT_CLASS_BUFFER_SIZE, 0);
-	return msg;
-}
-
-int ClientClass::GetSocket() {
-	return SocketHandle;
-}
-
-ClientClass::ClientClass(const char* str) {
-	SocketHandle = 0;
-	ServerSocket = 0;
-	Connect(str);
-}
-int ClientClass::Disconnect() {
-	return shutdown(SocketHandle, SD_BOTH);
+	
+	Start();
 }
 ClientClass::~ClientClass() {
-	Disconnect();
-	closesocket(SocketHandle);
-	WSACleanup();
-}
-void ClientClass::SendPost(std::string id, std::string msg) {
-	HANDLE F = CreateFile(msg.c_str(), GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_READ_ATTRIBUTES, NULL);
-	rapidjson::Document doc;//отправляем файл с файлом
-	auto& allocator = doc.GetAllocator();
-	rapidjson::Value json_val;
-	json_val.SetString("in");
-	doc.SetObject().AddMember("mod", json_val, allocator);
-	json_val.SetString(id.c_str(), allocator);
-	doc.AddMember("destination", json_val, allocator);
-	json_val.SetString(msg.c_str(), allocator);
-	doc.AddMember("data", json_val, allocator);
-	if (F != INVALID_HANDLE_VALUE) {
-		json_val.SetInt(FILE_TYPE);
-		doc.AddMember("type", json_val, allocator);
-		
-		long long psize = GetFileSize(F, NULL);
-		long long pcount = psize / FILE_BUFFER_SIZE + (psize % FILE_BUFFER_SIZE) ? 1 : 0;
-		json_val.SetInt64(pcount);
-		doc.AddMember("pcount", json_val, allocator);
-		json_val.SetInt64(psize);
-		doc.AddMember("size", json_val, allocator);
-		rapidjson::StringBuffer buffer;
-		rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-		doc.Accept(writer);
-		Send(buffer.GetString());
-		Sleep(WAITING_TIME);
-		Recieve(strlen("Start") + 1);
-		DWORD readbytes;
-		char file_buffer[FILE_BUFFER_SIZE];
-		while (pcount > 0) {
-			int read_size = (psize > FILE_BUFFER_SIZE) ? (psize-=FILE_BUFFER_SIZE, FILE_BUFFER_SIZE) : psize;
-			ReadFile(F, file_buffer, read_size, &readbytes, NULL);
-			Send(file_buffer, read_size);
-			--pcount;
-		}
-		CloseHandle(F);
-		Sleep(WAITING_TIME);
+	shutdown(HostSocket.GetSocketHandle(), SD_BOTH);
+	ReceiveThreadState = OFF;
+	if (ReceiveThread.joinable()) {
+		ReceiveThread.join();
 	}
-	else {
-		json_val.SetInt(STRING_TYPE);
-		doc.AddMember("type", json_val, allocator);
-		rapidjson::StringBuffer buffer;
-		rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-		doc.Accept(writer);
-		Send(buffer.GetString());
-		Sleep(WAITING_TIME);
-		Recieve(strlen("Start") + 1);
-	}
-	
-}
-char* ClientClass::Recieve(int b) {
-	if (SocketHandle == 0) {
-		return nullptr;
-	}
-	char* msg = new char[b];
-	recv(SocketHandle, msg, b, 0);
-	return msg;
+	HostSocket.Close();
 }
 
-std::string ClientClass::RecievePost(std::string id) {
-	rapidjson::Document doc;
-	doc.SetObject();
-	rapidjson::Value json_val;
-	json_val.SetString("get");
-	doc.AddMember("mod", json_val, doc.GetAllocator());
-	json_val.SetString(id.c_str(), doc.GetAllocator());
-	doc.AddMember("destination", json_val, doc.GetAllocator());
-	rapidjson::StringBuffer buffer;
-	rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-	doc.Accept(writer);
-	Send(buffer.GetString());
-	Sleep(WAITING_TIME);
-	Recieve(strlen("Start")+1);
-	std::string ans(Recieve());
-	rapidjson::StringStream s(ans.c_str());
-	doc.ParseStream(s);
-	int type = doc["type"].GetInt();
-	if (type == STRING_TYPE) {
-		std::string msg = doc["data"].GetString();
-		Sleep(WAITING_TIME);
-		return msg;
-	}
-	else if (type == FILE_TYPE) {
-		std::string msg = doc["data"].GetString();
-		HANDLE f = CreateFile(msg.c_str(), GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
-		int pack_count = doc["pcount"].GetInt();
-		unsigned long psize = doc["size"].GetInt64();
-		DWORD writeBytes;
-		while (pack_count > 0) {
-			int read_size = (psize > FILE_BUFFER_SIZE) ? (psize -= FILE_BUFFER_SIZE, FILE_BUFFER_SIZE) : psize;
-			char* pfile = Recieve(read_size);
-			WriteFile(f, pfile, read_size, &writeBytes, NULL);
-			delete[] pfile;
-			--pack_count;
+void ReceiveFunction(ClientClass* Server) {
+	std::string msg;
+	while (Server->ReceiveThreadState == ON) {
+		Sleep(DEFAULT_SLEEP_TIME);
+		int res;
+		if ((res = Server->HostSocket.Recieve(msg)) > 0) {
+			Server->Parser.Execute(msg, Server->Commands);//парсинг строки в очередь
+			//std::cout << msg;
+			msg.clear();
 		}
-		CloseHandle(f);
-		Sleep(WAITING_TIME);
-		return msg;
-		//получаем файл
 	}
+	//std::cout << 0;
+}
+
+void ClientClass::Start() {
+	ReceiveThreadState = ON;
+	ReceiveThread = std::thread(ReceiveFunction, this);
+}
+
+const MySocketClass& ClientClass::GetSocket() const {
+	return HostSocket;
+}
+
+
+int ClientClass::Connect(const std::string& adr) {
+	Disconnect();
+	return HostSocket.Connect(adr);
+}
+int ClientClass::Disconnect() {
+	if (HostSocket.State() == CONNECTED) {
+		return HostSocket.Close();
+	}
+	else if (HostSocket.State() == BINDED) {
+		exit(1);
+	}
+	return 0;
+}
+
+//sendtext q len text
+int ClientClass::SendText(const std::string& qid, const std::string& text) {
+	return this->Send(GenTextCommandForServer(qid, text));
+}
+//receive q
+
+void ClientClass::GetPacks() {
+	int counts = 10;
+	while (counts > 0) {
+		if (!Commands.empty()) {
+			auto command = Commands.front();
+			Commands.pop();
+			if (command->params[0] == "endfile") {
+				break;
+			}
+			command->execute(this);
+			std::cout << "pack\n";
+			counts = 10;
+		}
+		Sleep(DEFAULT_SLEEP_TIME);
+		--counts;
+	}
+}
+
+int ClientClass::Receive(const std::string& qid, std::string& dest) {
+	int res = Send(GenReceiveCommandForServer(qid));
+	if (res <= 0) {
+		return res;
+	}
+	int count = 10;
+	MyCommandClass* command = nullptr;
+	while (count > 0) {
+		if (!Commands.empty()) {
+			command = Commands.front();
+			Commands.pop();
+			dest = std::string(command->params[2]);
+			if (command->params[0] == std::to_string(STRING_TYPE)) {
+				//получили строку
+			}
+			else {
+				//получаем файл
+				std::remove(std::string(Folder + dest).c_str());
+				GetPacks();
+			}
+			break;
+		}
+		Sleep(DEFAULT_SLEEP_TIME);
+		--count;
+	}
+	return dest.length();
+}
+int ClientClass::Send(const std::string& text) {
+	if (text.empty()) {
+		return 0;
+	}
+	int res = -1;
+	for (int i = 0; i < ATTEMPT_COUNT; ++i) {
+		if ((res = HostSocket.Send(text)) > 0) {
+			break;
+		}
+		Sleep(DEFAULT_SLEEP_TIME);
+	}
+	return res;
+}
+
+
+int ClientClass::SendFile(const std::string& qid, const std::string& file) {
+	long long file_size;
+	if ((file_size = FileSize(file)) < 1) {
+		return 0;
+	}
+	int res = -1;
+	this->Send(GenFileCommandForServer(qid, GetLastPartOfFileName(file)));
+	long long packs_count = file_size / PACK_SIZE;
+	if (file_size % PACK_SIZE) {
+		++packs_count;
+	}
+	std::ifstream f(file, std::ios::binary);
+	std::string pack;
+	char s;
+	for (long long i = 0; i < packs_count; ++i) {
+		for (int j = 0; j < PACK_SIZE; ++j) {
+			s = (char)f.get();
+			if (!f.eof()) {
+				pack += s;
+			}
+			else {
+				break;
+			}
+		}
+		this->Send(GenPackCommandForServer(GetLastPartOfFileName(file), pack));
+		pack.clear();
+		Sleep(DEFAULT_SLEEP_TIME);
+	}
+	return 1;
+}
+
+
+const std::string& ClientClass::GetFolder() const {
+	return Folder;
+}
+
+
+void ClientClass::SetFolder(const std::string& f) {
+	Folder = f;
 }

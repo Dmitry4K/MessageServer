@@ -88,7 +88,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>D:\dev\json\rapidjson\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -140,13 +140,27 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\Additional\SimpleTimer.cpp" />
+    <ClCompile Include="..\MyFunctions\MyFunctions.cpp" />
+    <ClCompile Include="..\MySockets\MySockets.cpp" />
     <ClCompile Include="DataBaseClass.cpp" />
+    <ClCompile Include="MyServerParser.cpp" />
     <ClCompile Include="ServerClass.cpp" />
     <ClCompile Include="SocketMendeger.cpp" />
     <ClCompile Include="Source.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\Additional\MyProtClasses.h" />
+    <ClInclude Include="..\Additional\SimpleTimer.h" />
+    <ClInclude Include="..\MyFunctions\MyFunctions.h" />
+    <ClInclude Include="..\MySockets\MySockets.h" />
+    <ClInclude Include="Commands\endfile_c.h" />
+    <ClInclude Include="Commands\file_c.h" />
+    <ClInclude Include="Commands\pack_c.h" />
+    <ClInclude Include="Commands\recieve_c.h" />
+    <ClInclude Include="Commands\text_c.h" />
     <ClInclude Include="DataBaseClass.h" />
+    <ClInclude Include="MyServerParser.h" />
     <ClInclude Include="ServerClass.h" />
     <ClInclude Include="SocketMenedger.h" />
   </ItemGroup>

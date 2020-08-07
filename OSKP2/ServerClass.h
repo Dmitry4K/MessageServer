@@ -9,49 +9,97 @@
 #include<utility>
 #include<vector>
 #include<queue>
+#include<mutex>
 #include<thread>
+#include<sstream>
 #include"DataBaseClass.h"
 #include"SocketMenedger.h"
-class ServerClass {
-private:
-	const std::string WAY_TO_DATA = "data.json";
-	DataBaseClass Data;
-	int Port;
-	int SocketHandle;
-	SocketMenedger ActiveSockets;
-	std::queue<std::pair<int, char*>> HandleCommand;
-	bool isExit = false;
-	std::thread Handler;
-	std::thread ExecuteStarter;
-	std::thread Console;
-	std::vector <std::pair<int, std::thread>> Executors;
-	void Accept();
-	void Close();
-	void Start();
+#include"MyServerParser.h"
+#include"../MySockets/MySockets.h"
+#include"../Additional/MyProtClasses.h"
 
+
+const int ACTIVE_SOCKETS_COUNT = 200;
+const int DEFAULT_SLEEP_TIME = 100;
+const int OFF = 0;
+const int ON = 1;
+
+struct MyCommandClass;
+struct ServerClass;
+
+const int CHECK_TIME = 10000;
+const int ACTIVE = 1;
+const int NOT_ACTIVE = 0;
+const int IN_USED = 2;
+
+struct ThreadMenedgerClass {
+private:
+	ServerClass* Server = nullptr;
+	std::vector<std::pair<std::thread, int*>> container;
+	std::queue<int> used;
+	std::mutex door;
+	int state = NOT_ACTIVE;
+	std::thread TimeChecker;
+	friend void ThrMenExecuteFunction(MyCommandClass*, int*, ServerClass* Server);
+	friend void TimeCheckerFunction(ThreadMenedgerClass* menedger);
 public:
-	const static int CLIENT_CLASS_BUFFER_SIZE = 100;
-	const static int EXECUTOR_COUNT = 10;
-	const static int ACTIVE_SOCKETS_COUNT = 10;
-	const static int FILE_BUFFER_SIZE = 10000;
+	void SetServer(ServerClass* Server);
+	ThreadMenedgerClass();
+	ThreadMenedgerClass(ServerClass* Server);
+	~ThreadMenedgerClass();
+	void Add(MyCommandClass*);
+};
+
+void ThrMenExecuteFunction(MyCommandClass*, int*, ServerClass* Server);
+void TimeCheckerFunction(ThreadMenedgerClass* menedger);
+
+struct ServerClass {
+private:
+	MySocketClass HostSocket;
+	SocketMenedger ActiveSockets;
+	DataBaseClass Data;
+	MyParserClass Parser;
+	ThreadMenedgerClass Threads;
+	std::map<std::string, MyCommandClass*> CommandMap;
+
+	std::thread ExecuteThread;
+	std::thread ReceiveThread;
+	std::thread AcceptThread;
+
+	int ExecuteThreadState = OFF;
+	int ReceiveThreadState = OFF;
+	int AcceptThreadState = OFF;
+
+	MyProtQueue<MyCommandClass*> Commands;
+	void BlockThread();
+public:
+	std::mutex DataMutex;
+	std::mutex CoutMutex;
 	ServerClass(int argc, char* argv[]);
-	ServerClass(int p);
+	ServerClass(const std::string& adr);
+	ServerClass();
 	~ServerClass();
 
-	int GetPort();
-	int Send(int Socket, const char* b);
-	int Send(int Socket, const char* b, int bytes);
-	int Recieve(int recvSocket, char**);
-	int Recieve(int recvSocket, char**, int b);
-	int Recieve(char**);
-	bool IsExit();
-	void ConsoleStart();
-	friend void HandlerFunction(ServerClass* Server);
-	friend void ExecuteStarterFunction(ServerClass* Server);
-	friend void ExecuteFunction(ServerClass* Server, int s, char* msg, int& res);
-	friend void ConsoleFunction(ServerClass* Server, HANDLE pipe);
+	void Start();	
+	MySocketClass& GetSocket();
+	DataBaseClass& GetData();
+
+	friend void ReceiveFunction(ServerClass* Server);
+	friend void ExecuteFunction(ServerClass* Server);
+	friend void AcceptFunction(ServerClass* Server);
+	friend MyCommandClass;
 };
-void HandlerFunction(ServerClass* Server);
-void ExecuteStarterFunction(ServerClass* Server);
-void ExecuteFunction(ServerClass* Server, int s, char* msg, int& res);
-void ConsoleFunction(ServerClass* Server, HANDLE pipe);
+void ReceiveFunction(ServerClass* Server);
+void ExecuteFunction(ServerClass* Server);
+void AcceptFunction(ServerClass* Server);
+
+
+struct MyCommandClass {
+	int count = 0;
+	std::vector<std::string> params;
+	std::string name;
+	int socket = 0;
+	virtual void execute(ServerClass* node) const = 0;
+	virtual void argument_parsing(std::istringstream& stream) = 0;
+	virtual void copy(MyCommandClass*&) const = 0;
+}; 

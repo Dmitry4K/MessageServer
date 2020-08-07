@@ -1,10 +1,10 @@
 #include"SocketMenedger.h"
 
+SocketMenedger::SocketMenedger() : Capacity(0) {}
 
-SocketMenedger::SocketMenedger(int p) {
-	Capacity = p;
-}
-int SocketMenedger::Exist(int s) {
+SocketMenedger::SocketMenedger(int p) : Capacity(p) {}
+
+int SocketMenedger::isExist(int s) {
 	for (int i = 0; i < ActiveSockets.size(); ++i) {
 		if (ActiveSockets[i] == s) {
 			return i;
@@ -28,7 +28,7 @@ bool SocketMenedger::Add(int s) {
 	}
 }
 bool SocketMenedger::Remove(int s) {
-	int res = Exist(s);
+	int res = isExist(s);
 	if (res) {
 		if (res == ActiveSockets.size() - 1) {
 			ActiveSockets.pop_back();
@@ -46,6 +46,11 @@ int SocketMenedger::operator[] (int i) const {
 	return ActiveSockets[i];
 }
 
-int SocketMenedger::Size() {
+size_t SocketMenedger::Size() {
 	return ActiveSockets.size();
+}
+
+
+std::mutex& SocketMenedger::GetMutex(){
+	return door;
 }

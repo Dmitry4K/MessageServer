@@ -1,0 +1,6 @@
+data
+queues 1
+	id 1 count 2
+	msg type 2 len 9 text test3.txt
+	msg type 2 len 9 text test3.txt
+

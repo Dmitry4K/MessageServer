@@ -1,15 +1,19 @@
 #pragma once
 #include<vector>
 #include<queue>
+#include<mutex>
 class SocketMenedger {
 	std::vector<int> ActiveSockets;
 	std::queue<int> AlreadyUsed;
+	std::mutex door;
 	int Capacity;
 public:
 	SocketMenedger(int c);
-	int Exist(int);
+	SocketMenedger();
+	int isExist(int);
 	bool Add(int);
 	bool Remove(int s);
-	int Size();
+	size_t Size();
 	int operator[](int i) const;
+	std::mutex& GetMutex();
 };
