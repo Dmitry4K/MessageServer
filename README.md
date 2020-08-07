@@ -25,112 +25,190 @@
 Весь сервер сообщений – соответствующий класс, заголовочный файл которого представлен ниже.
 Для обеспечения многопоточности (одновременной работы с несколькими пользователями) требовалось реализовать некоторые функции, которые будут распределять между собой входящие запросы и параллельно их обрабатывать.
 
-Весь сервер работает на одном процессе на одном сокете, запросы обрабатываются на разных потоках. В связи с этим имеем ограничение в количество одновременно подключенных пользователей ~1500. 
+Весь сервер работает на одном процессе на одном сокете, запросы обрабатываются на разных потоках. В связи с этим имеем ограничение в количество одновременно подключенных пользователей ~1000. 
 
-Основные модули сервера – хранилище базы данных (класс со своими методами и логикой), менеджер подключенных сокетов (хранит активные подключенные к серверу сокеты), приемщик входящих сообщений, обработчик входящих сообщений, функция ответа на полученный запрос и вектор с потоками, на которых запускается данная функция к определенному сокету.
+Основные модули сервера – хранилище базы данных (класс со своими методами и логикой), менеджер подключенных сокетов (хранит активные подключенные к серверу сокеты), приемщик входящих сообщений и исполнитель команд.
 
 ```c++
-class ServerClass {
-private:
-	const std::string WAY_TO_DATA = "data.json";
-	DataBaseClass Data;
-	int Port;
-	int SocketHandle;
-	SocketMenedger ActiveSockets;
-	std::queue<std::pair<int, char*>> HandleCommand;
-	bool isExit = false;
-	std::thread Handler;
-	std::thread ExecuteStarter;
-	std::thread Console;
-	std::vector <std::pair<int, std::thread>> Executors;
-	void Accept();
-	void Close();
-	void Start();
+#pragma once
+#define _WINSOCK_DEPRECATED_NO_WARNINGS
+#include<iostream>
 
+#pragma comment (lib,"Ws2_32.lib")
+#include <winsock2.h>
+#include<Windows.h>
+#include<string>
+#include<utility>
+#include<vector>
+#include<queue>
+#include<mutex>
+#include<thread>
+#include<sstream>
+#include"DataBaseClass.h"
+#include"SocketMenedger.h"
+#include"MyServerParser.h"
+#include"../MySockets/MySockets.h"
+#include"../Additional/MyProtClasses.h"
+
+
+const int ACTIVE_SOCKETS_COUNT = 200;
+const int DEFAULT_SLEEP_TIME = 100;
+const int OFF = 0;
+const int ON = 1;
+
+struct MyCommandClass;
+struct ServerClass;
+
+const int CHECK_TIME = 10000;
+const int ACTIVE = 1;
+const int NOT_ACTIVE = 0;
+const int IN_USED = 2;
+
+struct ThreadMenedgerClass {
+private:
+	ServerClass* Server = nullptr;
+	std::vector<std::pair<std::thread, int*>> container;
+	std::queue<int> used;
+	std::mutex door;
+	int state = NOT_ACTIVE;
+	std::thread TimeChecker;
+	friend void ThrMenExecuteFunction(MyCommandClass*, int*, ServerClass* Server);
+	friend void TimeCheckerFunction(ThreadMenedgerClass* menedger);
 public:
-	const static int CLIENT_CLASS_BUFFER_SIZE = 100;
-	const static int EXECUTOR_COUNT = 10;
-	const static int ACTIVE_SOCKETS_COUNT = 10;
-	const static int FILE_BUFFER_SIZE = 10000;
+	void SetServer(ServerClass* Server);
+	ThreadMenedgerClass();
+	ThreadMenedgerClass(ServerClass* Server);
+	~ThreadMenedgerClass();
+	void Add(MyCommandClass*);
+};
+
+void ThrMenExecuteFunction(MyCommandClass*, int*, ServerClass* Server);
+void TimeCheckerFunction(ThreadMenedgerClass* menedger);
+
+struct ServerClass {
+private:
+	MySocketClass HostSocket;
+	SocketMenedger ActiveSockets;
+	DataBaseClass Data;
+	MyParserClass Parser;
+	ThreadMenedgerClass Threads;
+	std::map<std::string, MyCommandClass*> CommandMap;
+
+	std::thread ExecuteThread;
+	std::thread ReceiveThread;
+	std::thread AcceptThread;
+
+	int ExecuteThreadState = OFF;
+	int ReceiveThreadState = OFF;
+	int AcceptThreadState = OFF;
+
+	MyProtQueue<MyCommandClass*> Commands;
+	void BlockThread();
+public:
+	std::mutex DataMutex;
+	std::mutex CoutMutex;
 	ServerClass(int argc, char* argv[]);
-	ServerClass(int p);
+	ServerClass(const std::string& adr);
+	ServerClass();
 	~ServerClass();
 
-	int GetPort();
-	int Send(int Socket, const char* b);
-	int Send(int Socket, const char* b, int bytes);
-	int Recieve(int recvSocket, char**);
-	int Recieve(int recvSocket, char**, int b);
-	int Recieve(char**);
-	bool IsExit();
-	void ConsoleStart();
-	friend void HandlerFunction(ServerClass* Server);
-	friend void ExecuteStarterFunction(ServerClass* Server);
-	friend void ExecuteFunction(ServerClass* Server, int s, char* msg, int& res);
-	friend void ConsoleFunction(ServerClass* Server, HANDLE pipe);
+	void Start();	
+	MySocketClass& GetSocket();
+	DataBaseClass& GetData();
+
+	friend void ReceiveFunction(ServerClass* Server);
+	friend void ExecuteFunction(ServerClass* Server);
+	friend void AcceptFunction(ServerClass* Server);
+	friend MyCommandClass;
 };
-void HandlerFunction(ServerClass* Server);
-void ExecuteStarterFunction(ServerClass* Server);
-void ExecuteFunction(ServerClass* Server, int s, char* msg, int& res);
-void ConsoleFunction(ServerClass* Server, HANDLE pipe);
+void ReceiveFunction(ServerClass* Server);
+void ExecuteFunction(ServerClass* Server);
+void AcceptFunction(ServerClass* Server);
+
+
+struct MyCommandClass {
+	int count = 0;
+	std::vector<std::string> params;
+	std::string name;
+	int socket = 0;
+	virtual void execute(ServerClass* node) const = 0;
+	virtual void argument_parsing(std::istringstream& stream) = 0;
+	virtual void copy(MyCommandClass*&) const = 0;
+}; 
 ```
 **ServerClass** поддерживает несколько конструкторов: конструктор, который принимает номер порта, на котором будет работать сервер (сервер запускается по локальному адресу). После вызова данного конструктора сервер блокирует текущий поток и начинает слушать запросы на присоединение, конструктор который принимает аргументы командной строки. Этот конструктор получает порт из командной строки если тот задан, в ином случае, сервер не запускается и выводит сообщение о неправильном формате командной строки. 
 
-Запуск сервера начинается с вызова метода **Start()**, этот метод автоматически вызывается, если конструкторы успешно отработали свои инструкции. Внутри метода Start() происходит следующее – к хранилищу базы данных привязывается имя файла, далее запускается вторая **консоль, откуда пользователь может вводить команды** (данная консоль служит для отключения сервера и поддерживает одну команду – «exit»), подключается библиотека для работы с сокетами windows, создается и связывается сокет, запускается приемщик  сообщений (**std::thread Handler**) и модуль, который запускает потоки для обработки запросов (std::thread **ExecuteStarter**), вызывается метод **Accept()**.
+Запуск сервера начинается с вызова метода **Start()**, этот метод автоматически вызывается, если конструктор успешно отработал свои инструкции. Внутри метода Start() происходит следующее – к хранилищу базы данных привязывается имя файла, подключается библиотека для работы с сокетами windows, создается и связывается сокет. Затем запускается несколько крайне важных функций на отдельных потоках - **ReceiveFunction**, **ExecuteFunction**, **AcceptFunction**.
 
-Метод **Accept()** – блокирует текущий поток и начинает принимает входящие запросы на подключение к серверу, как только, какое-нибудь устройство подключилось к серверу, подключенный сокет отправляется в SocketMendger, сервер начинает слушать полученный сокет.
+Функция **AcceptFunction** – принимает входящие запросы на подключение к серверу, как только, какое-нибудь устройство подключилось к серверу, подключенный сокет отправляется в SocketMendger, сервер начинает слушать полученный сокет.
 
-**Handler** – (функция – HandlerFunction) поток, который принимает входящие запросы из подключенных сокетов посредством SocketMenedger, то есть Handler по очереди пытается каждые 100 миллисекунд принять какое-нибудь сообщение из всех подключенных сокетов. Если сообщение получено, оно отправляется в очередь сообщений HandleCommand, на последующую обработку ExecuteStarter.
+**ReceiveFunction** – принимает входящие запросы из подключенных сокетов посредством SocketMenedger, то есть ReceiveFunction по очереди пытается через заданное кол-во миллисекунд принять какое-нибудь сообщение из всех подключенных сокетов. Если сообщение получено, оно парсится вложенным классом MyServerParser, создается экземпляр команды с параметрами для ее обратоки, затем команда отправляется в очередь сообщений Commands, на последующую обработку ExecuteFunction.
 
-**ExecuteStarter** – (функция – ExecuteStarterFunction) работает с очередью HandleCommand, логика данного модуля такова – если очередь не пуста, забираем полученное сообщение, и пытаемся отправить его на обработку в какой-нибудь свободный поток. На этом потоке запускается функция – ExecuteFunction
-
-**void ExecuteFunction(ServerClass\* Server, int sock, char\* msg, int& res)** – функция, которая непосредственно формирует запрос на полученное сообщение, в зависимости от того, что требует клиент, добавить в какую-то очередь сообщение, либо забрать какое-то сообщение, ExecuteFunction – либо отправляет сообщение, либо принимает. 
-
-Функции прием и отправки сообщения **Send** и **Receive** отправляют сообщение на заданный сокет (имеется две реализации для отправки целой строки, и для отправки заданного количества байт из буфера). Большие файлы передаются кусками, сначала сервер и клиент обмениваются информацией о типе сообщения, далее принимающей стороне отправляется размер файла и количество пакетов, на которое будет разделен файл, далее принимается это количество пакетов. Простая строка отправляется одним пакетом.
-
-Для того, чтобы сервер мог понять какой сокет отключился от сервера, сервер перед обработкой сообщения посылает на сокет строку “Start”, далее, если отправка произошла успешно, начинается формирование ответа на запрос.
+**ExecuteFunction** – работает с очередью Commands, логика данного модуля такова – если очередь не пуста, забираем полученное сообщение, и пытаемся отправить его на обработку в ThreadMenedger.
 
 ### 2.2 DataBaseClass.h
 
 Хранилище базы данных – класс DataBaseClass, хранит в себе вектор очередей сообщений, каждой сообщение представляет из себя экземпляр MessageClass. 
 
 ```c++
-struct MessageClass {
-	const static int FILE = 0;
-	const static int STRING = 1;
+#pragma once
+#include<iostream>
+#include<fstream>
+#include<vector>
+#include<queue>
+#include<map>
+#include<string>
+#include<list>
+
+const int FILE_TYPE = 0;
+const int STRING_TYPE = 1;
+const int INGURED_TYPE = 2;
+const int UNKNOWN_TYPE = -1;
+const std::string WAY_TO_DATA = "D:\\dev\\OSKP2\\data.txt";
+const std::string FOLDER = "D:\\dev\\OSKP2\\server_storage\\";
+
+class MessageClass {
 	std::string Data;
 	int Type;
-	MessageClass() {}
-	MessageClass(std::string);
-	MessageClass(std::string, int t);
+public:
+	MessageClass();
+	MessageClass(const std::string&, int t);
+
+	bool Empty();
+	int GetType();
+	std::string GetData();
+	void Write(std::ofstream& file);
+	void Read(std::ifstream& file);
 };
 
 class DataBaseClass {
 private:
 	std::string File;
 	std::map<std::string, std::queue<MessageClass>> Data;
+	std::list<MessageClass*> Files;
+	void ReadQueue(std::ifstream& file);
+	void WriteQueue(std::ofstream& file, const std::string& qid, std::queue<MessageClass>& q);
 public:
 	DataBaseClass();
-	DataBaseClass(const char*);
 	~DataBaseClass();
+	DataBaseClass(const DataBaseClass&) = delete;
+
 	std::queue<MessageClass>& GetQueueByName(const std::string&);
-	void AddMessageInQueue(const std::string&, MessageClass);
-	MessageClass GetFrontMessageInQueue(const std::string&);
-	void PopMessageInQueue(const std::string&);
-	bool isExistQueue(const std::string&);
-	bool Upload(const char*);
-	void Write(const char*);
-	void NewBase(const char*);
-	void AddQueue(const char*);
-	bool RemoveQueue(const char*);
+	void AddQueue(const std::string&);
+	std::map<std::string, std::queue<MessageClass>>::iterator isExistQueue(const std::string&);
+	std::map<std::string, std::queue<MessageClass>>::iterator End();
+	bool RemoveQueue(const std::string&);
+
+	void Upload(const std::string&);
+	void Write(const std::string&);
+	void NewBase(const std::string&);
 };
+
 ```
 
 **MessageClass** состоит из строки, текст сообщения и типа сообщения(файл, либо строка). 
 
 **DataBaseClass** – хранит в себе путь до файла откуда будет прочитана или же записана база данных. Инструментарий класс – набор методов на картой очередей, с помощью этих методов легко оперировать всей базой данной: можем добавлять очереди, добавлять сообщения в очередь со специальным идентификатором, удалять целые очереди, либо сообщения в очереди, названия методов в точности отражают их функционал, единственное, что может оказаться неочевидным это то, что если при вызове метода AddMessageInQueue не будет найдена очередь, эта очередь будет создана и в нее будет положено сообщение.
-
-Вся База данных рабоает с json файлами, для этого используется библиотека **rapidjson**.
 
 ### 2.3 SocketMenedger
 Для хранения активных сокетов используется класс SocketMenedger, содержит в себе вектор сокетов и очередь.
@@ -141,52 +219,101 @@ public:
 
 **ClientClass** – класс для работы с сервером, позволяет отправлять и принимать различные сообщения на сервер. Хранит свой сокет и сокет сервера
 
-**ClientClass()** – пустой конструктор, обнуляет сокеты.
-
 **ClientClass(const char\*)** – подключается к серверу по  адресу , переданному в данный конструктор.
 
 **СlientClass::Connect(const char\*)** - подключается к серверу по  адресу , переданному в данный метод, возвращает ошибку SOCKET_ERROR, если не подключился, иначе – сокет.
 
-**СlientClass::std::string RecievePost(std::string id)** – получить сообщение из очереди с идентификатором id.
+**int СlientClass::Receive(const std::string& qid, std::string& dest);** – получить сообщение из очереди с идентификатором qid, результат будет записан в dest.
 
-**СlientClass::void SendPost(std::string id, std::string msg)** – отправить сообщение с в очередь с идентификатором id.Логика SendPost такова, что если в msg передано название файла, то оправляется файл, иначе – строка.
+**int СlientClass::SendText(const std::string& qid, const std::string& text);** - отправить строку на сервер в очередь qid.
+
+**int СlientClass::SendFile(const std::string& qid, const std::string& file);** - отправить файл на сервер в очерель qid. Передача файлов осуществляется посредством их деления на более маленькие тексты(пакеты) фиксированной длины.
 
 ```c++
+#pragma once
+#include<iostream>
+#define _WINSOCK_DEPRECATED_NO_WARNINGS
+#pragma comment (lib,"Ws2_32.lib")
+#include <winsock2.h>
+#include<Windows.h>
+#include<string>
+#include<utility>
+#include<map>
+#include"../Additional/SimpleTimer.h"
+#include"../MySockets/MySockets.h"
+#include"../Additional/MyProtClasses.h"
+#include"MyClientParser.h"
+struct MyCommand;
+const int ATTEMPT_COUNT = 4;
+const int ATTEMPT_TIME = 1000;
+const int ACTIVE_SOCKETS_COUNT = 10;
+const int DEFAULT_SLEEP_TIME = 500;
+const int OFF = 0;
+const int ON = 1;
+const int FILE_TYPE = 0;
+const int STRING_TYPE = 1;
+const std::string DEFAULT_FOLDER = "D:\\dev\\OSKP2\\client_storage\\";
+
+const int PACK_SIZE = 10000;
+struct MyCommandClass;
 class ClientClass {
 private:
-	int SocketHandle = 0;
-	int ServerSocket = 0;
-	int Send(const char* b);
-	int Send(const char* b, int bytes);
-	char* Recieve();
-	char* Recieve(int b);
+	MySocketClass HostSocket;
+	Timer MyTimer;
+	std::map<std::string, MyCommandClass*> CommandMap;
+
+	std::thread ReceiveThread;
+	int ReceiveThreadState = OFF;
+	MyParserClass Parser;
+	std::queue<MyCommandClass*> Commands;
+	int Send(const std::string& text);//CHAR*
+
+	std::string Folder = DEFAULT_FOLDER;
+	inline void GetPacks();
 public:
-	const static int CLIENT_CLASS_ERROR_SOCKET = SOCKET_ERROR;
-	const static int CLIENT_CLASS_BUFFER_SIZE = 100;
-	const static int FILE_TYPE = 0;
-	const static int STRING_TYPE = 1;
-	const static int FILE_BUFFER_SIZE = 10000;
-	const static int WAITING_TIME = 200;
-	ClientClass();
-	ClientClass(const char* str);
+	ClientClass(const std::string& adr);
 	~ClientClass();
-	int GetSocket();
-	int Connect(const char* str);
+
+	void Start();
+	int Connect(const std::string& adr);
 	int Disconnect();
-	std::string RecievePost(std::string id);
-	void SendPost(std::string id, std::string msg);
+
+	const MySocketClass& GetSocket() const ;
+
+	int SendText(const std::string& qid, const std::string& text);
+	int SendFile(const std::string& qid, const std::string& file);
+	int Receive(const std::string& qid, std::string& dest);
+	const std::string& GetFolder() const;
+	void SetFolder(const std::string& f);
+
+	friend void ReceiveFunction(ClientClass* Server);
+};
+void ReceiveFunction(ClientClass* Server);
+
+struct MyCommandClass {
+	int count = 0;
+	std::vector<std::string> params;
+	virtual void execute(ClientClass *node) const = 0;
+	virtual void argument_parsing(std::istringstream& stream) = 0;
+	virtual void copy(MyCommandClass*&) const = 0;
 };
 ```
 
 
+## 4.	Дполнительные модули и функции
 
-## 4.	Плюсы и минусы
-Главным **плюсом** данного проекта является то, что сервер работает на одном сокете, сам сервер состоит из модулей, которые при желании могут быть легко изменены без вреда для друг друга, за счет очереди входящих сообщений сервер быстро принимает запросы.
+### 4.1. ООП оболочка библиотеки winsock
 
-К **минусам** стоит отнести возможность сбоя работы клиента при слишком долго ответе на запрос, также так как запросы обрабатываются на потоках, количество пользователей сильно ограничено, однако эту проблему можно решить, запуская обработку запроса на отдельном процессе.
+### 4.2. ThreadMenedger
+
+### 4.3. Обработка команд
+
+### 4.4. Другие функции
+
+## 5.	Плюсы и минусы
+Плюсы - система команд, которая позволяет легко "сервер новым командам". Относительная простота. Модульность.
+
+Минусы - обработка команд выполняется в потоках, что сильно ограничивает кол-во активных пользователей. 
 
 ## 5.	Заключение
 В ходе выполнения данного проекта был реализован простой сервер сообщений, с соответствующим классом для работы с этим сервер. Данный сервер может послужить неплохим инструментом для коммуникации между небольшой группой людей, или стать основой для полноценного сервера для обработки большого количества запросов при дополнительных модификациях.
-
-
-
