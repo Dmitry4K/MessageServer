@@ -304,11 +304,63 @@ struct MyCommandClass {
 
 ### 4.1. ООП оболочка библиотеки winsock
 
+Для осуществления передачи сообщений между сервером и пользователями использовались стандартные windows сокеты. Функции которые предоставляет данная библиотека легла в основу MySocketClass - класс, с помощь. которого можно легко подключаться к сокетам, считывать и отправлять на них сообщения.
+
+```c++
+#pragma once
+#define _WINSOCK_DEPRECATED_NO_WARNINGS
+#include<iostream>
+
+#pragma comment (lib,"Ws2_32.lib")
+#include <winsock2.h>
+#include<Windows.h>
+#include<mutex>
+													//Состояния сокетов
+const int EMPTY = 0;
+const int CONNECTED = 1;
+const int BINDED = 2;
+													//Переменный для хранения информации библиотеки winsock
+static bool IS_WSA_STARTED = false;
+static WSADATA W_DATA;
+
+static int SOCKET_COUNT = 0;						//Кол-во созданных в процессе экземпляров MySocketClass
+class MySocketClass {		
+private:
+	std::string adr;								//подключенный адресс
+	int handle = 0;									//handle, который получаем при вызове socket()
+	int state = EMPTY;								//Состояние сокета
+	//std::mutex door;								//Можно добавить мьютекс, чтобы сделать сокет потоко-безопасным
+public:
+	MySocketClass();
+	~MySocketClass();
+	const std::string& GetAdr() const;
+	int GetSocketHandle() const;
+	int Connect(const std::string& way);
+	int Bind(const std::string& way);
+	int Close();
+													//методы отправки сообщений
+	int Send(int h, const char*, int len);
+	int Send(const char*, int len);
+	int Send(const char*);							//только для классических си строк !
+	int Send(const std::string& m);
+	int Send(int h, const std::string& m);
+													//методы приема сообщений
+	int Recieve(int h, char*&);
+	int Recieve(char*&);
+	int Recieve(std::string& m);					//только для классических строк
+	int Recieve(int h, std::string& m);				//только для классических строк
+
+	int State() const ;
+};
+```
+
 ### 4.2. ThreadMenedger
+?
+Для выполнения команд используется специальаный класс ThreadMenedger, основа которого - вектор с потоками. У данного класса есть только один метод - Add(MyCommandsClass*), который принимает указатель на команду. Эта инструкция запускает отдельный поток для обработки переданной команды и отправляет команду на обработку в этот поток. Кроме того, через некоторое время класс в отдельном потоке проверяет уже созданные потоки. Таким образм при заврешении одной инструкции в потоке, этот поток будет вновь использован для выполнения новой инструкции.
 
 ### 4.3. Обработка команд
 
-### 4.4. Другие функции
+Так как команды передаются в виде строки с параметрами для удобства нужно было как-то связать строку с объектом определенной команды, что можно было осуществить посредством map<std::string, MyCommandClass>, при обращении к этому объекту черех оператор[] можно будет легко достать экземпляр нужной команды используя специальную строку.
 
 ## 5.	Плюсы и минусы
 Плюсы - система команд, которая позволяет легко "сервер новым командам". Относительная простота. Модульность.
