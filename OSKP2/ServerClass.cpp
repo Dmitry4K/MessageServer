@@ -33,9 +33,6 @@ ServerClass::ServerClass(int argc, char* argv[]) : ServerClass(std::string(argv[
 
 void ServerClass::Start() {
 	CommandSystemState(CoutMutex, "Server's system thread starting...");
-	//загрузка базы
-	//Data = DataBaseClass(WAY_TO_DATA);
-	//запуск обработчиков
 	ExecuteThreadState = ON;
 	ReceiveThreadState = ON;
 	AcceptThreadState = ON;

@@ -1,5 +1,15 @@
 data
-queues 1
-	id 1 count 1
+queues 3
+	id 1 count 5
+	msg type 2 len 9 text image.jpg
+	msg type 2 len 9 text image.jpg
+	msg type 2 len 10 text test5.docx
+	msg type 2 len 9 text image.jpg
+	msg type 2 len 10 text test5.docx
+
+	id 2 count 1
+	msg type 2 len 10 text test5.docx
+
+	id 3 count 1
 	msg type 2 len 9 text image.jpg
 

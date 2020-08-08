@@ -14,9 +14,8 @@ ClientClass::ClientClass(const std::string& adr) : Parser(this->CommandMap){
 	CommandMap["endfile"] = new ClientEndFileCommand();
 	if (HostSocket.Connect(adr) != 0) {
 		HostSocket.Close();
-		exit(1);
+		//exit(1);
 	}
-	
 	Start();
 }
 ClientClass::~ClientClass() {
@@ -122,7 +121,7 @@ int ClientClass::Send(const std::string& text) {
 		return 0;
 	}
 	int res = -1;
-	for (int i = 0; i < ATTEMPT_COUNT; ++i) {
+	for (int i = 0; i < DEFAULT_COUNT; ++i) {
 		if ((res = HostSocket.Send(text)) > 0) {
 			break;
 		}
@@ -171,4 +170,8 @@ const std::string& ClientClass::GetFolder() const {
 
 void ClientClass::SetFolder(const std::string& f) {
 	Folder = f;
+}
+
+int ClientClass::State() {
+	return HostSocket.State();
 }

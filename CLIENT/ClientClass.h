@@ -13,11 +13,8 @@
 #include"../MyCharStream/MyCharStream.h"
 #include"MyClientParser.h"
 struct MyCommand;
-const int ATTEMPT_COUNT = 4;
-const int ATTEMPT_TIME = 1000;
-const int ACTIVE_SOCKETS_COUNT = 10;
 const int DEFAULT_SLEEP_TIME = 10;	//500
-const int DEFAULT_COUNT = 1000; //10
+const int DEFAULT_COUNT = 1000;		//10
 const int OFF = 0;
 const int ON = 1;
 const int FILE_TYPE = 0;
@@ -36,7 +33,7 @@ private:
 	int ReceiveThreadState = OFF;
 	MyParserClass Parser;
 	std::queue<MyCommandClass*> Commands;
-	int Send(const std::string& text);//CHAR*
+	int Send(const std::string& text);
 
 	std::string Folder = DEFAULT_FOLDER;
 	inline void GetPacks();
@@ -47,6 +44,7 @@ public:
 	void Start();
 	int Connect(const std::string& adr);
 	int Disconnect();
+	int State();
 
 	const MySocketClass& GetSocket() const ;
 
