@@ -4,14 +4,15 @@
 #include<sstream>
 #include"ServerClass.h"
 #include"../MyFunctions/MyFunctions.h"
+#include"../MyCharStream/MyCharStream.h"
 MyParserClass::MyParserClass(const std::map<std::string, MyCommandClass*>& cm, std::mutex& mutex) : CommandMap(cm), CoutMutex(mutex) {}
 
-void MyParserClass::Execute(const std::string& src, MyProtQueue<MyCommandClass*>& dest, int socket) {
-    std::string command;
-    std::istringstream string_stream(src);
-    while (!string_stream.eof()) {
-        string_stream >> command;
-        auto com = CommandMap.find(command);
+void MyParserClass::Execute(char*& src,int len, MyProtQueue<MyCommandClass*>& dest, int socket) {
+    char* p_command;
+    MyCharStreamClass string_stream(src,len);          //потеря данных
+    while (!string_stream.EOS()) {
+        string_stream.GetWord(p_command);
+        auto com = CommandMap.find(std::string(p_command));
         if (com != CommandMap.end()) {
             MyCommandClass* command_class = nullptr;
             com->second->copy(command_class);
@@ -21,8 +22,8 @@ void MyParserClass::Execute(const std::string& src, MyProtQueue<MyCommandClass*>
             dest.push(command_class);
         }
         else {
-            CommandState(CoutMutex, "Unknown command", command);
+            CommandState(CoutMutex, "Unknown command", std::string(p_command));
         }
-        command.clear();
+        delete[] p_command;
     }
 }

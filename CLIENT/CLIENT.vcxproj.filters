@@ -19,6 +19,9 @@
     <Filter Include="Functions">
       <UniqueIdentifier>{28976527-be0e-4ea7-b1fa-411273a7d1b8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="MyCharStream">
+      <UniqueIdentifier>{013360ed-30c2-480e-a013-13d7f52c2d6c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source.cpp">
@@ -38,6 +41,9 @@
     </ClCompile>
     <ClCompile Include="..\MyFunctions\MyFunctions.cpp">
       <Filter>Functions</Filter>
+    </ClCompile>
+    <ClCompile Include="..\MyCharStream\MyCharStream.cpp">
+      <Filter>MyCharStream</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -67,6 +73,9 @@
     </ClInclude>
     <ClInclude Include="..\MyFunctions\MyFunctions.h">
       <Filter>Functions</Filter>
+    </ClInclude>
+    <ClInclude Include="..\MyCharStream\MyCharStream.h">
+      <Filter>MyCharStream</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

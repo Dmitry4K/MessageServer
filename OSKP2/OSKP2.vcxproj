@@ -141,6 +141,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\Additional\SimpleTimer.cpp" />
+    <ClCompile Include="..\MyCharStream\MyCharStream.cpp" />
     <ClCompile Include="..\MyFunctions\MyFunctions.cpp" />
     <ClCompile Include="..\MySockets\MySockets.cpp" />
     <ClCompile Include="DataBaseClass.cpp" />
@@ -152,6 +153,7 @@
   <ItemGroup>
     <ClInclude Include="..\Additional\MyProtClasses.h" />
     <ClInclude Include="..\Additional\SimpleTimer.h" />
+    <ClInclude Include="..\MyCharStream\MyCharStream.h" />
     <ClInclude Include="..\MyFunctions\MyFunctions.h" />
     <ClInclude Include="..\MySockets\MySockets.h" />
     <ClInclude Include="Commands\endfile_c.h" />

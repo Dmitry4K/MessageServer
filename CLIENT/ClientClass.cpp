@@ -29,14 +29,14 @@ ClientClass::~ClientClass() {
 }
 
 void ReceiveFunction(ClientClass* Server) {
-	std::string msg;
+	char*  msg = nullptr;
 	while (Server->ReceiveThreadState == ON) {
 		Sleep(DEFAULT_SLEEP_TIME);
 		int res;
-		if ((res = Server->HostSocket.Recieve(msg)) > 0) {
-			Server->Parser.Execute(msg, Server->Commands);//парсинг строки в очередь
+		if ((res = Server->HostSocket.Recieve(msg)) > 0) {	//потеря данных!!!
+			Server->Parser.Execute(msg,res, Server->Commands);//парсинг строки в очередь
 			//std::cout << msg;
-			msg.clear();
+			delete[] msg;
 		}
 	}
 	//std::cout << 0;
@@ -78,7 +78,7 @@ void ClientClass::GetPacks() {
 		if (!Commands.empty()) {
 			auto command = Commands.front();
 			Commands.pop();
-			if (command->params[0] == "endfile") {
+			if (strcmp(command->params[0], "endfile") == 0) {
 				break;
 			}
 			command->execute(this);

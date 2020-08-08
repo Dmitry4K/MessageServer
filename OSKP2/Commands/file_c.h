@@ -23,21 +23,21 @@ struct FileCommand : MyCommandClass {
 		Data.GetQueueByName(qid).push(MessageClass(filename, INGURED_TYPE));
 		node->DataMutex.unlock();
 	}
-	void argument_parsing(std::istringstream& stream) override {
+	void argument_parsing(MyCharStreamClass& stream) override {
 		long long file_size;
-		std::string word;
-		stream >> word;
+		char* word;
+		stream.GetWord(word);
 		params.push_back(word);
-		stream >> word;
+		word = nullptr;
+		stream.GetWord(word);
 		params.push_back(word);
 		file_size = std::stoll(word);
-		stream.get();
-		word.clear();
-		for (int i = 0; i < file_size - 1; ++i) {
-			word += (char)stream.get();
-		}
-		stream.get();
+		stream.Get();
+		word = nullptr;
+		stream.Get(word, file_size);
+		stream.Get();
 		params.push_back(word);
+		word = nullptr;
 	}
 	void copy(MyCommandClass*& com) const override {
 		com = new FileCommand();

@@ -12,9 +12,9 @@ struct EndFileCommand : MyCommandClass {
 	void execute(ServerClass* node) const override {
 
 	}
-	void argument_parsing(std::istringstream& stream) override {
+	void argument_parsing(MyCharStreamClass& stream) override {
 		unsigned int file_size;
-		std::string word;
+		char* word;
 		stream >> word;
 		params.push_back(word);
 		file_size = std::stoul(word);

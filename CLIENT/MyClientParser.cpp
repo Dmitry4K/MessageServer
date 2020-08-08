@@ -3,14 +3,15 @@
 #include<string>
 #include<sstream>
 #include"ClientClass.h"
+#include"../MyCharStream/MyCharStream.h"
 MyParserClass::MyParserClass(const std::map<std::string, MyCommandClass*>& cm) : CommandMap(cm) {}
 
-void MyParserClass::Execute(const std::string& src, std::queue<MyCommandClass*>& dest) {
-    std::string command;
-    std::istringstream string_stream(src);
-    while (!string_stream.eof()) {
-        string_stream >> command;
-        auto com = CommandMap.find(command);
+void MyParserClass::Execute(char*& src,int len, std::queue<MyCommandClass*>& dest) {
+    char* p_command;
+    MyCharStreamClass string_stream(src, len);      //потеря данных
+    while (!string_stream.EOS()) {
+        string_stream.GetWord(p_command);
+        auto com = CommandMap.find(std::string(p_command));
         if (com != CommandMap.end()) {
             MyCommandClass* command_class = nullptr;
             com->second->copy(command_class);
@@ -20,6 +21,6 @@ void MyParserClass::Execute(const std::string& src, std::queue<MyCommandClass*>&
         else {
            // std::cout << "Unknown command : " << command << std::endl;
         }
-        command.clear();
+        delete[] p_command;
     }
 }

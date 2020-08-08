@@ -1,5 +1,6 @@
 #include<iostream>
 #include"ServerClass.h"
+#include"../MyCharStream/MyCharStream.h"
 
 
 int main(int argc, char* argv[]) {

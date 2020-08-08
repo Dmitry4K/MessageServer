@@ -17,6 +17,7 @@
 #include"MyServerParser.h"
 #include"../MySockets/MySockets.h"
 #include"../Additional/MyProtClasses.h"
+#include"../MyCharStream/MyCharStream.h"
 
 
 const int ACTIVE_SOCKETS_COUNT = 200;
@@ -96,10 +97,15 @@ void AcceptFunction(ServerClass* Server);
 
 struct MyCommandClass {
 	int count = 0;
-	std::vector<std::string> params;
+	std::vector<char*> params;
 	std::string name;
 	int socket = 0;
 	virtual void execute(ServerClass* node) const = 0;
-	virtual void argument_parsing(std::istringstream& stream) = 0;
+	virtual void argument_parsing(MyCharStreamClass& stream) = 0;
 	virtual void copy(MyCommandClass*&) const = 0;
+	~MyCommandClass() {
+		for (int i = 0; i < params.size(); ++i) {
+			delete[] params[i];
+		}
+	}
 }; 

@@ -14,20 +14,20 @@ struct TextCommand : MyCommandClass {
 		node->GetData().GetQueueByName(params[0]).push(MessageClass(params[2], STRING_TYPE));
 		node->DataMutex.unlock();
 	}
-	void argument_parsing(std::istringstream& stream) override {
-		std::string word;
-		stream >> word;
+	void argument_parsing(MyCharStreamClass& stream) override {
+		char* word;
+		stream.GetWord(word);
 		params.push_back(word);
-		stream >> word;
+		word = nullptr;
+		stream.GetWord(word);
 		params.push_back(word);
 		int len = std::stoi(word);
-		stream.get();
-		word.clear();
-		for (int i = 0; i < len-1; ++i) {
-			word += (char)stream.get();
-		}
-		stream.get();
+		word = nullptr;
+		stream.Get();
+		stream.Get(word, len);
+		stream.Get();
 		params.push_back(word);
+		word = nullptr;
 	}
 	void copy(MyCommandClass*& com) const override {
 		com = new TextCommand();

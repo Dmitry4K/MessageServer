@@ -65,10 +65,11 @@ struct ReceiveCommand : MyCommandClass {
 		//Нужно определить, есть ли сообщение, файл или текст
 		node->DataMutex.unlock();
 	}
-	void argument_parsing(std::istringstream& stream) override {
-		std::string word;
-		stream >> word;
+	void argument_parsing(MyCharStreamClass& stream) override {
+		char * word;
+		stream.GetWord(word);
 		params.push_back(word);
+		word = nullptr;
 	}
 	void copy(MyCommandClass*& com) const override {
 		com = new ReceiveCommand();

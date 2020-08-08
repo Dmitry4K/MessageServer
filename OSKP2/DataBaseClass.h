@@ -45,7 +45,6 @@ public:
 	std::map<std::string, std::queue<MessageClass>>::iterator isExistQueue(const std::string&);
 	std::map<std::string, std::queue<MessageClass>>::iterator End();
 	bool RemoveQueue(const std::string&);
-	MessageClass* FindFile(const std::string&);
 
 	void Upload(const std::string&);
 	void Write(const std::string&);

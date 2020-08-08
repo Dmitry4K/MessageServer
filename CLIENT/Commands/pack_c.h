@@ -6,28 +6,26 @@ struct ClientPackCommand : MyCommandClass {
 	ClientPackCommand() {
 		count = 4;
 	}
-	void argument_parsing(std::istringstream& stream) override {
+	void argument_parsing(MyCharStreamClass& stream) override {
 		long long file_size;
-		std::string word;
-		stream >> word;
+		char* word;
+		stream.GetWord(word);
 		params.push_back(word);
 		file_size = std::stoll(word);
-		stream.get();
-		word.clear();
-		for (int i = 0; i < file_size; ++i) {
-			word += (char)stream.get();
-		}
+		word = nullptr;
+		stream.Get();
+		stream.Get(word, file_size);
 		//stream.get();
 		params.push_back(word);
-		stream >> word;
+		word = nullptr;
+		stream.GetWord(word);
 		params.push_back(word);
 		file_size = std::stoul(word);
-		stream.get();
-		word.clear();
-		for (int i = 0; i < file_size; ++i) {
-			word += (char)stream.get();
-		}
+		word = nullptr;
+		stream.Get();
+		stream.Get(word, file_size);
 		params.push_back(word);
+		word = nullptr;
 	}
 	void copy(MyCommandClass*& com) const override {
 		com = new ClientPackCommand();
@@ -35,7 +33,7 @@ struct ClientPackCommand : MyCommandClass {
 	void execute(ClientClass* client) const override {
 		std::ofstream file(std::string(client->GetFolder() + params[1]), std::ios::binary | std::ios::out | std::ios::app);
 		file.seekp(std::ios_base::end);
-		file << params[3];
+		file.write(params[3], std::atoi(params[2]));
 		file.close();
 	}
 };

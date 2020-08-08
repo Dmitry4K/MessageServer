@@ -77,16 +77,14 @@ void AcceptFunction(ServerClass* Server) {
 
 void ReceiveFunction(ServerClass* Server) {
 	CommandSystemState(Server->CoutMutex, "Recieving Messages thread started.");
-	std::string msg;
+	char* msg;
 	while (Server->ReceiveThreadState == ON) {
 		Server->ActiveSockets.GetMutex().lock();
 		for (size_t i = 0; i < Server->ActiveSockets.Size(); ++i) {
 			int res;
-			if ((res = Server->HostSocket.Recieve(Server->ActiveSockets[i], msg)) > 0) {
-				//std::cout << "Recieved message\n";
-				//std::cout << msg << std::endl;
-				Server->Parser.Execute(msg, Server->Commands, Server->ActiveSockets[i]);//парсинг строки на комманды
-				//std::cout << Server->HostSocket.Send(Server->ActiveSockets[i], "Хай");
+			if ((res = Server->HostSocket.Recieve(Server->ActiveSockets[i], msg)) > 0) { 
+				Server->Parser.Execute(msg,res, Server->Commands, Server->ActiveSockets[i]);//парсинг строки на комманды
+				delete[] msg;
 			}
 		}
 		Server->ActiveSockets.GetMutex().unlock();

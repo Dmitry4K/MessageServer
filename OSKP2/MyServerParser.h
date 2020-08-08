@@ -7,6 +7,6 @@ struct MyCommandClass;
 struct MyParserClass {
 	const std::map<std::string, MyCommandClass*>& CommandMap;
 	std::mutex& CoutMutex;
-	void Execute(const std::string& src, MyProtQueue<MyCommandClass*>& dest, int socket);
+	void Execute(char*& src,int len, MyProtQueue<MyCommandClass*>& dest, int socket);
 	MyParserClass(const std::map<std::string, MyCommandClass*>&, std::mutex&);
 };

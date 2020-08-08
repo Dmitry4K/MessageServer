@@ -22,6 +22,9 @@
     <Filter Include="DataBase">
       <UniqueIdentifier>{2cddcfab-8521-4b36-aaaf-b0a97f7f239d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="CharStream">
+      <UniqueIdentifier>{3bc8b356-11ff-4c82-ad88-cd8bef697081}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source.cpp">
@@ -47,6 +50,9 @@
     </ClCompile>
     <ClCompile Include="DataBaseClass.cpp">
       <Filter>DataBase</Filter>
+    </ClCompile>
+    <ClCompile Include="..\MyCharStream\MyCharStream.cpp">
+      <Filter>CharStream</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -88,6 +94,9 @@
     </ClInclude>
     <ClInclude Include="DataBaseClass.h">
       <Filter>DataBase</Filter>
+    </ClInclude>
+    <ClInclude Include="..\MyCharStream\MyCharStream.h">
+      <Filter>CharStream</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
