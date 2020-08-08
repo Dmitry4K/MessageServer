@@ -1,5 +1,5 @@
 data
 queues 1
 	id 1 count 1
-	msg type 2 len 8 text test4.7z
+	msg type 2 len 9 text image.jpg
 

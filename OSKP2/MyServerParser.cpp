@@ -16,13 +16,13 @@ void MyParserClass::Execute(char*& src,int len, MyProtQueue<MyCommandClass*>& de
         if (com != CommandMap.end()) {
             MyCommandClass* command_class = nullptr;
             com->second->copy(command_class);
-            CommandState(CoutMutex, com->second->name, "Parsing...");
+            CommandState(CoutMutex, com->second->name,socket,  "Parsing...");
             command_class->argument_parsing(string_stream);
             command_class->socket = socket;
             dest.push(command_class);
         }
         else {
-            CommandState(CoutMutex, "Unknown command", std::string(p_command));
+            CommandState(CoutMutex, "Unknown command",socket, std::string(p_command));
         }
         delete[] p_command;
     }

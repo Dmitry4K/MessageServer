@@ -155,7 +155,7 @@ void ThreadMenedgerClass::SetServer(ServerClass* Server) {
 }
 
 void ThrMenExecuteFunction(MyCommandClass* command, int* state, ServerClass* Server) {
-	CommandState(Server->CoutMutex, command->name, "The thread started");
+	CommandState(Server->CoutMutex, command->name, command->socket,"The thread started");
 	command->execute(Server);	//выполнить команду
 	delete command;				//очищаем память
 	*state = NOT_ACTIVE;

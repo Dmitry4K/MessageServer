@@ -73,7 +73,7 @@ int ClientClass::SendText(const std::string& qid, const std::string& text) {
 //receive q
 
 void ClientClass::GetPacks() {
-	int counts = 10;
+	int counts = DEFAULT_COUNT;
 	while (counts > 0) {
 		if (!Commands.empty()) {
 			auto command = Commands.front();
@@ -82,8 +82,8 @@ void ClientClass::GetPacks() {
 				break;
 			}
 			command->execute(this);
-			std::cout << "pack\n";
-			counts = 10;
+			//std::cout << "pack\n";
+			counts = DEFAULT_COUNT;
 		}
 		Sleep(DEFAULT_SLEEP_TIME);
 		--counts;
@@ -95,7 +95,7 @@ int ClientClass::Receive(const std::string& qid, std::string& dest) {
 	if (res <= 0) {
 		return res;
 	}
-	int count = 10;
+	int count = DEFAULT_COUNT;
 	MyCommandClass* command = nullptr;
 	while (count > 0) {
 		if (!Commands.empty()) {

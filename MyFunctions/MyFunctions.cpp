@@ -93,8 +93,8 @@ void ConnectionState(std::mutex& d, const std::string& text) {
 	State(d, "[Connection] : " + text);
 }
 
-void CommandState(std::mutex& d, const std::string& command, const std::string& text) {
-	State(d, "[" + command+ "] : " + text);
+void CommandState(std::mutex& d, const std::string& command, int handle, const std::string& text) {
+	State(d, "[" + std::to_string(handle)+ ':' + command+ "] : " + text);
 }
 
 

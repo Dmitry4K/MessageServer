@@ -22,7 +22,7 @@ void SendFile(MessageClass& Msg, int socket, ServerClass* node) {
 		++packs_count;
 	}
 	//std::cout << "Packs : " << packs_count << std::endl;
-	CommandState(node->CoutMutex, "File Sending", "Packs : " + std::to_string(packs_count));
+	CommandState(node->CoutMutex, "File Sending",socket, "Packs : " + std::to_string(packs_count));
 	std::ifstream f(FOLDER + Msg.GetData(), std::ios::binary);
 	std::string pack;
 	char s;
@@ -40,7 +40,7 @@ void SendFile(MessageClass& Msg, int socket, ServerClass* node) {
 		int res = node->GetSocket().Send(socket, GenPackCommandForClient(GetLastPartOfFileName(Msg.GetData()), pack));
 		if (res > 0) {
 			//std::cout << "pack\n";
-			CommandState(node->CoutMutex, "File Sending", "Pack [" + std::to_string(i+1) + "/" + std::to_string(packs_count) + "] sended. Size : " + std::to_string(pack_s) + " bytes");
+			CommandState(node->CoutMutex, "File Sending",socket,  "Pack [" + std::to_string(i+1) + "/" + std::to_string(packs_count) + "] sended. Size : " + std::to_string(pack_s) + " bytes");
 		}
 		pack.clear();
 		Sleep(DEFAULT_SLEEP_TIME);

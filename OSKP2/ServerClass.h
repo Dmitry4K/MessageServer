@@ -21,7 +21,8 @@
 
 
 const int ACTIVE_SOCKETS_COUNT = 200;
-const int DEFAULT_SLEEP_TIME = 100;
+const int DEFAULT_SLEEP_TIME = 10;	//100
+const int DEFAULT_COUNT = 1000;	//10
 const int OFF = 0;
 const int ON = 1;
 

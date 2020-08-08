@@ -14,9 +14,9 @@ int main() {
 	ClientClass Client("127.0.0.1:4040");
 	std::cout << "Handle : " << Client.GetSocket().GetSocketHandle() << std::endl;
 	//Client.SendFile("1", test3);
-	Client.SendFile("1", test4);
+	Client.SendFile("1", image);
 	Client.Receive("1", string);
-	std::cout << string;
+	std::cout << string << std::endl;
 	system("pause");
 	return 0;
 }

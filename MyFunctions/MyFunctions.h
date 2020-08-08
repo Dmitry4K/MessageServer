@@ -31,5 +31,5 @@ void State(std::mutex& d, const std::string& text);
 
 void ConnectionState(std::mutex& d, const std::string& text);
 
-void CommandState(std::mutex& d, const std::string& command, const std::string& text);
+void CommandState(std::mutex& d, const std::string& command,int handle,  const std::string& text);
 void CommandSystemState(std::mutex& d, const std::string& text);

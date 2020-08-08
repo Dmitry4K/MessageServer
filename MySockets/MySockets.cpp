@@ -12,17 +12,17 @@ int MySocketClass::GetSocketHandle() const {
 MySocketClass::MySocketClass() {
 	if (!IS_WSA_STARTED) {
 		if (WSAStartup(MAKEWORD(2, 2), &W_DATA) == 0) {
-			std::cout << "WSA Startup succes\n";
+			//std::cout << "WSA Startup succes\n";
 		}
 		else {
-			"WSA Startup Error!\n";
+			//"WSA Startup Error!\n";
 			exit(1);
 		}
 		IS_WSA_STARTED = true;
 	}
 	handle = socket(AF_INET, SOCK_STREAM, NULL);
 	if (handle == SOCKET_ERROR) {
-		std::cout << "Socket not created!\n";
+		//std::cout << "Socket not created!\n";
 		exit(1);
 	}
 	++SOCKET_COUNT;
@@ -37,12 +37,14 @@ int MySocketClass::Connect(const std::string& way) {
 	int res = connect(handle, (sockaddr*)&addr, sizeof(addr));
 	u_long arg = 1;
 	ioctlsocket(handle, FIONBIO, &arg);
+	/*
 	std::cout << "Client connected to server - "
 		<< (unsigned char)addr.sin_addr.S_un.S_un_b.s_b1 + '0' - 48 << '.'
 		<< (unsigned char)addr.sin_addr.S_un.S_un_b.s_b2 + '0' - 48 << '.'
 		<< (unsigned char)addr.sin_addr.S_un.S_un_b.s_b3 + '0' - 48 << '.'
 		<< (unsigned char)addr.sin_addr.S_un.S_un_b.s_b4 + '0' - 48 << ':'
 		<< ntohs(addr.sin_port) << std::endl;
+	*/
 	if (res != SOCKET_ERROR) {
 		adr = way;
 	}
@@ -109,32 +111,6 @@ int MySocketClass::Send(const std::string& s) {
 int MySocketClass::Send(int h, const std::string& s) {
 	return Send(h, s.c_str(), s.length() + 1);
 }
-
-/*
-int MySocketClass::Recieve(int h, std::string& m) {//char *
-	//door.lock();
-	char* buf;
-	int msg_size;
-	int res = recv(h, (char*)&msg_size, sizeof(int), 0);
-	if (res < 4) {
-		//door.unlock();
-		return res;
-	}
-	buf = new char[msg_size];
-	res = recv(h, buf, msg_size, 0);
-	if (res > 0) {
-		m = std::string(buf);
-	}
-
-	//std::cout << WSAGetLastError() << std::endl;
-	delete[] buf;
-	//door.unlock();
-	return res;
-}
-
-int MySocketClass::Recieve(std::string& m) {//char *
-	return Recieve(handle, m);
-}*/
 
 int MySocketClass::Recieve(int h, char*& buf) {
 	int msg_size;
